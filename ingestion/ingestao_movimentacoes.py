@@ -23,10 +23,16 @@ cliente = bigquery.Client(project=project_id)
 caminho = sys.argv[1]
 
 #leitura do arquivo
-df = pl.read_csv(caminho, skip_rows=1, encoding="latin1", infer_schema_length=0)
+df = pl.read_csv(caminho, skip_rows=0, has_header=False, encoding="latin1", infer_schema_length=0, truncate_ragged_lines=True, separator=';')
+
 #selecionando as colunas necessárias
-df = df.select(['Atend.', 'Destino']).rename({'Atend.': 'Atendimento'})
+df = df.select(['column_2', 'column_13']).rename({'column_2': 'Atendimento', 'column_13': 'Destino'})
+
+#removendo "lixo"
+df = df.filter(pl.col('Atendimento').str.contains(r"^\d+$"))
+
 logging.info(f'Carregado {len(df)} linhas!')
+print(df.head(5))
 
 #converter colunas em strings
 df = df.cast(pl.Utf8)
@@ -47,6 +53,7 @@ destino = f'{project_id}.raw.movimentacoes'
 
 #execução da carga
 job = cliente.load_table_from_dataframe(df.to_pandas(), destino, job_config=job_config)
+logging.info('Enviando dados ao BigQuery...')
 
 #aguardar carga
 job.result()
