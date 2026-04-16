@@ -71,12 +71,16 @@ atendimento_com_internacoes as(
     and date(lc.DT_HR_ATENDIMENTO) between date(u.DT_ATENDIMENTO)
     and date_add(date(u.DT_ATENDIMENTO), interval 1 day)
     and lc.ORIGEM_ATEND in ('EMERGENCIA ADULTO', 'EMERGENCIA INFANTIL')
+    qualify row_number() over(
+        partition by u.CD_ATENDIMENTO
+        order by lc.DT_HR_ATENDIMENTO asc
+    ) = 1
 ),
 
 retorno_48h as(
     select distinct a1.CD_ATENDIMENTO
     from atendimentos as a1
-    left join atendimentos as a2
+    inner join atendimentos as a2
     on a1.CD_PACIENTE = a2.CD_PACIENTE
     and a1.CID = a2.CID
     and a2.DT_ATENDIMENTO > a1.DT_ATENDIMENTO
@@ -116,7 +120,7 @@ final as (
        case when a.MOTIVO_ALTA = 'EVASAO' then 1 else 0 end as fl_evasao
     from atendimentos as a
     left join atendimento_com_internacoes as ai
-    on a.CD_ATENDIMENTO = ai.ATENDIMENTO
+    on a.CD_ATENDIMENTO = ai.CD_ATENDIMENTO
     left join retorno_48h as r
     on a.CD_ATENDIMENTO = r.CD_ATENDIMENTO
 )
