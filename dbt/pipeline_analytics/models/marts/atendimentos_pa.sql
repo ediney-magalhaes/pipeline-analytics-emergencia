@@ -72,8 +72,28 @@ atendimento_com_internacoes as(
     and date_add(date(u.DT_ATENDIMENTO), interval 1 day)
     and lc.ORIGEM_ATEND in ('EMERGENCIA ADULTO', 'EMERGENCIA INFANTIL')
     qualify row_number() over(
-        partition by u.CD_ATENDIMENTO
-        order by lc.DT_HR_ATENDIMENTO asc
+        partition by lc.ATENDIMENTO
+        order by timestamp_diff(lc.DT_HR_ATENDIMENTO, u.DT_HR_TOTEM_RECEP, minute) asc
+    ) = 1
+),
+
+possivel_conversao as(
+    select
+    u.CD_ATENDIMENTO,
+    lc.ATENDIMENTO,
+    lc.ORIGEM_ATEND,
+    lc.LEITO as Destino,
+    lc.UNIDADE as Unidade,
+    lc.Tipo
+    from ultimo_atendimento as u
+    left join internacao_leito_certo as lc
+    on u.CD_PACIENTE = lc.COD_PACIENTE
+    and date(lc.DT_HR_ATENDIMENTO) between date(u.DT_ATENDIMENTO)
+    and date_add(date(u.DT_ATENDIMENTO), interval 1 day)
+    and lc.ORIGEM_ATEND not in ('EMERGENCIA ADULTO', 'EMERGENCIA INFANTIL')
+    qualify row_number() over(
+        partition by lc.ATENDIMENTO
+        order by timestamp_diff(lc.DT_HR_ATENDIMENTO, u.DT_HR_TOTEM_RECEP, minute) asc
     ) = 1
 ),
 
@@ -117,12 +137,15 @@ final as (
        ai.Tipo,
        case when ai.ATENDIMENTO is not null then 1 else 0 end as fl_conversao,
        case when r.CD_ATENDIMENTO is not null then 1 else 0 end as fl_retorno_48h,
-       case when a.MOTIVO_ALTA = 'EVASAO' then 1 else 0 end as fl_evasao
+       case when a.MOTIVO_ALTA = 'EVASAO' then 1 else 0 end as fl_evasao,
+       case when pc.CD_ATENDIMENTO is not null then 1 else 0 end as fl_suspeito_conversao
     from atendimentos as a
     left join atendimento_com_internacoes as ai
     on a.CD_ATENDIMENTO = ai.CD_ATENDIMENTO
     left join retorno_48h as r
     on a.CD_ATENDIMENTO = r.CD_ATENDIMENTO
+    left join possivel_conversao as pc
+    on a.CD_ATENDIMENTO = pc.CD_ATENDIMENTO
 )
 
 select * from final
