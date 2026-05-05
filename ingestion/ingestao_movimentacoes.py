@@ -24,9 +24,19 @@ caminho = sys.argv[1]
 
 #leitura do arquivo
 df = pl.read_csv(caminho, skip_rows=0, has_header=False, encoding="latin1", infer_schema_length=0, truncate_ragged_lines=True, separator=';')
-
-#selecionando as colunas necessárias
-df = df.select(['column_2', 'column_13']).rename({'column_2': 'Atendimento', 'column_13': 'Destino'})
+print(f"Colunas encontradas: {df.columns}")
+#renomeando as colunas necessárias
+df = df.rename({
+    'column_2': 'Atendimento',
+    'column_4': 'Hora',
+    'column_5': 'Tipo',
+    'column_7': 'Origem',
+    'column_9': 'Destino',
+    'column_10': 'Tip_Acom',
+    'column_11': 'CID',
+    'column_12': 'Convenio',
+    'column_13': 'Motivo_Alta'
+})
 
 #removendo "lixo"
 df = df.filter(pl.col('Atendimento').str.contains(r"^\d+$"))
