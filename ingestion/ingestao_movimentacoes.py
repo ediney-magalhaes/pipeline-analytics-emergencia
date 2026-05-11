@@ -29,25 +29,21 @@ nome_arquivo = os.path.basename(caminho_arquivo)
 periodo = nome_arquivo.split("_")
 
 #limpa o mês
-periodo_mes = periodo[2].replace(".xlsx", "")
+periodo_mes = periodo[2].replace(".csv", "")
 
 #unifica o ano ao mês
 competencia = "-".join([periodo[1], periodo_mes])
 
 #leitura do arquivo
-df = pl.read_csv(caminho_arquivo, skip_rows=0, has_header=False, encoding="latin1", infer_schema_length=0, truncate_ragged_lines=True, separator=';')
+df = pl.read_csv(caminho_arquivo, skip_rows=0, has_header=True, encoding="latin1", infer_schema_length=0, truncate_ragged_lines=True, separator=';')
 print(f"Colunas encontradas: {df.columns}")
 #renomeando as colunas necessárias
 df = df.rename({
-    'column_2': 'Atendimento',
-    'column_4': 'Hora',
-    'column_5': 'Tipo',
-    'column_7': 'Origem',
-    'column_9': 'Destino',
-    'column_10': 'Tip_Acom',
-    'column_11': 'CID',
-    'column_12': 'Convenio',
-    'column_13': 'Motivo_Alta'
+    'Atend.': 'Atendimento',
+    'Tip. Acom': 'Tip_Acom',
+    'CID ': 'CID',
+    'Convênio': 'Convenio',
+    'Motivo Alta': 'Motivo_Alta'
 })
 
 #removendo "lixo"
