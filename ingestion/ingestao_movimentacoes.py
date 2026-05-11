@@ -20,10 +20,22 @@ project_id = os.getenv('PROJECT_ID')
 cliente = bigquery.Client(project=project_id)
 
 #caminho do arquivo
-caminho = sys.argv[1]
+caminho_arquivo = sys.argv[1]
+
+#separa o nome do arquivo do caminho dele
+nome_arquivo = os.path.basename(caminho_arquivo)
+
+#separa o nome do arquivo por "_"
+periodo = nome_arquivo.split("_")
+
+#limpa o mês
+periodo_mes = periodo[2].replace(".xlsx", "")
+
+#unifica o ano ao mês
+competencia = "-".join([periodo[1], periodo_mes])
 
 #leitura do arquivo
-df = pl.read_csv(caminho, skip_rows=0, has_header=False, encoding="latin1", infer_schema_length=0, truncate_ragged_lines=True, separator=';')
+df = pl.read_csv(caminho_arquivo, skip_rows=0, has_header=False, encoding="latin1", infer_schema_length=0, truncate_ragged_lines=True, separator=';')
 print(f"Colunas encontradas: {df.columns}")
 #renomeando as colunas necessárias
 df = df.rename({
@@ -47,13 +59,16 @@ print(df.head(5))
 #converter colunas em strings
 df = df.cast(pl.Utf8)
 
+#cria coluna da competência no Dataframe
+df = df.with_columns(pl.lit(competencia).alias("competencia"))
+
 #========================================
 # Carga no BigQuery
 #========================================
 
 #configuração da carga
 job_config = bigquery.LoadJobConfig(
-    write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE,
+    write_disposition = bigquery.WriteDisposition.WRITE_APPEND,
     autodetect=False,
     schema=[bigquery.SchemaField(col, "STRING") for col in df.columns]
 )
