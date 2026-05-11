@@ -4,8 +4,12 @@ import json
 import logging
 import subprocess
 import threading
+import google.auth
+import requests
+import google.auth.transport.requests
 from flask import Flask, request
 from google.cloud import storage
+from google.cloud import bigquery
 
 # configurações dos registros de logging
 logging.basicConfig(
@@ -64,6 +68,58 @@ def ingestao():
         logging.info(f"Iniciando ingestão: {script} para {nome_arquivo}")
         subprocess.run(["python", script, caminho_local], check=True)
         logging.info("Ingestão concluída com sucesso!")
+
+        # criando cliente
+        projeto = os.environ.get("PROJECT_ID")
+        cliente = bigquery.Client(project=projeto)
+        tabela = script.split("_")
+        tabela = tabela[1].replace(".py", "")
+
+        # consultando a competencia
+        query = f"select distinct(competencia) as competencia" \
+        f" from {projeto}.raw.{tabela}"
+
+        #guardando a query
+        resultado = cliente.query(query).result()
+
+        # extrair a competência
+        for i in resultado:
+            competencia = i.competencia
+
+        #lista das tabelas para confirmação da competência
+        tabelas = ["atendimentos", "internacoes", "movimentacoes"]
+        contador = 0
+        for i in tabelas:
+            registro_competencia = f"select count(*) as total from {projeto}.raw.{i} where competencia  = '{competencia}'"
+            #executando
+            resultado_tabela = cliente.query(registro_competencia).result()
+            for linha in resultado_tabela:
+                if linha.total > 0:
+                    contador += 1
+        
+        #confere se todas as tabelas estão carregadas na competência certa
+        if contador == 3:
+            
+            #busca as credenciais do ambiente
+            credentials,_ = google.auth.default()
+            
+            #cria objeto http para renovação do token
+            auth_req = google.auth.transport.requests.Request()
+
+            #token de autenticação
+            credentials.refresh(auth_req)
+
+            #URL API Cloud Run
+            url = f"https://us-east1-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/{projeto}/jobs/dbt-pipeline-job:run"
+
+            #cabeçalho
+            headers = {'Authorization':f'Bearer {credentials.token}'}
+
+            #chamada HTTP
+            resposta = requests.post(url, headers=headers)
+            logging.info(f"dbt Job acionado — status: {resposta.status_code} — resposta: {resposta.text}")
+        else:
+            logging.info(f"Aguardando demais arquivos — {contador}/3 carregados para competência {competencia}")
     
     thread = threading.Thread(target=processar, args=(script, caminho_local, nome_arquivo))
     thread.start()
