@@ -19,3 +19,16 @@ gcloud builds submit ingestion/ --tag us-east1-docker.pkg.dev/pipeline-analytics
 3. Publica a imagem no Artifact Registry com a tag `latest`
 
 **Após o deploy:** o Cloud Run Service já passa a usar a nova imagem automaticamente na próxima execução.
+
+---
+
+## Atualizar o Cloud Run Service após novo build
+
+**Quando usar:** sempre após executar o comando de build — o Cloud Run não atualiza automaticamente.
+
+**Comando:**
+```bash
+gcloud run services update ingestao-pipeline-emergencia-service --image us-east1-docker.pkg.dev/pipeline-analytics-emergencia/pipeline-ingestao/ingestao:latest --region us-east1
+```
+
+**Atenção:** esses dois comandos — build e update — devem sempre ser executados em sequência toda vez que houver alteração em qualquer arquivo da pasta `ingestion/`.
