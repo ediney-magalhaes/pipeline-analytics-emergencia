@@ -24,7 +24,8 @@ pipeline-analytics-emergencia/
 ├── docs/             # Documentação do projeto
 │   ├── adr/          # Architecture Decision Records
 │   ├── arquitetura.md # Arquitetura detalhada do pipeline
-│   └── runbook.md    # Procedimentos operacionais de deploy
+│   ├── plano-analitico.md # Plano analítico do painel de emergência
+│   └── RUNBOOK.md    # Procedimentos operacionais de deploy
 ├── ingestion/        # Scripts Python de ingestão
 ├── dbt/              # Projeto dbt - transformações SQL
 └── README.md         # Apresentação do projeto
@@ -77,3 +78,8 @@ git push
 - [ADR-009 — Particionamento e Clusterização no BigQuery](docs/adr/ADR-009-particionamento-clusterizacao.md)
 - [ADR-010 — Lock para Acionamento Único do dbt Job](docs/adr/ADR-010-lock-acionamento-unico-dbt-job.md)
 - [ADR-011 — Proteção contra Duplicação na Raw](docs/adr/ADR-011-protecao-duplicacao-raw.md)
+- [ADR-012 — Interface de Curadoria Human-in-the-Loop](docs/adr/ADR-012-interface-curadoria-human-in-the-loop.md)
+- [ADR-013 — Integração Curadoria com Modelo dbt](docs/adr/ADR-013-integracao-curadoria-modelo-dbt.md)
+- [ADR-014 — Alertas Técnicos via Cloud Monitoring](docs/adr/ADR-014-alertas-tecnicos-cloud-monitoring.md)
+- [ADR-015 — Reorganização da Marts em Subpastas](docs/adr/ADR-015-reorganizacao-marts-subpastas.md)
+- [ADR-016 — Fixação de Versões no Dockerfile](docs/adr/ADR-016-fixacao-versoes-dockerfile.md)
