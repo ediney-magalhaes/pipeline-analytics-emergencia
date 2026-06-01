@@ -38,6 +38,12 @@ competencia = "-".join([periodo[1], periodo_mes])
 df = pl.read_excel(caminho_arquivo)
 print(f"Colunas encontradas: {df.columns}")
 
+#remove colunas sem nome
+df = df[[col for col in df.columns if not col.startswith('__UNNAMED__')]]
+
+#converter coluna de hora para string
+df = df.with_columns(pl.col('Hora').dt.strftime('%H:%M'))
+
 #renomeando as colunas necessárias
 df = df.rename({
     'Atend.': 'Atendimento',
