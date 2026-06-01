@@ -2,7 +2,6 @@ import os
 import sys
 import polars as pl
 import logging
-import chardet
 from dotenv import load_dotenv
 from google.cloud import bigquery
 
@@ -30,23 +29,15 @@ nome_arquivo = os.path.basename(caminho_arquivo)
 periodo = nome_arquivo.split("_")
 
 #limpa o mês
-periodo_mes = periodo[2].replace(".csv", "")
+periodo_mes = periodo[2].replace(".xlsx", "")
 
 #unifica o ano ao mês
 competencia = "-".join([periodo[1], periodo_mes])
 
-#detectar encoding do arquivo
-with open(caminho_arquivo, 'rb') as f:
-    resultado = chardet.detect(f.read())
-    encoding_detectado =resultado['encoding']
-logging.info(f'Encoding detectado: {encoding_detectado} (confiança: {resultado["confidence"]:.0%})')
-
 #leitura do arquivo
-df = pl.read_csv(caminho_arquivo, skip_rows=0, has_header=True, encoding=encoding_detectado, infer_schema_length=0, truncate_ragged_lines=True, separator=';')
+df = pl.read_excel(caminho_arquivo)
 print(f"Colunas encontradas: {df.columns}")
 
-#remove colunas duplicadas ou sem nome
-df = df[[col for col in df.columns if col != '' and not col.startswith('_duplicated')]]
 #renomeando as colunas necessárias
 df = df.rename({
     'Atend.': 'Atendimento',
