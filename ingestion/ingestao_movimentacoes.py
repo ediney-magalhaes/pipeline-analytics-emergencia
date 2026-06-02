@@ -79,6 +79,9 @@ job_config = bigquery.LoadJobConfig(
 #tabela_destino
 destino = f'{project_id}.raw.movimentacoes'
 
+#deleta tabela se já existente
+cliente.query(f"delete from {destino} where competencia = '{competencia}'").result()
+
 #execução da carga
 job = cliente.load_table_from_dataframe(df.to_pandas(), destino, job_config=job_config)
 logging.info('Enviando dados ao BigQuery...')
