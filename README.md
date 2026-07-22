@@ -92,3 +92,4 @@ git push
 - [ADR-018 — Idempotência na Ingestão via Delete + Insert por Competência](docs/adr/ADR-018-idempotencia-ingestao-delete-insert.md)
 - [ADR-019 — Autenticação da Interface de Curadoria via IAP](docs/adr/ADR-019-autenticacao-interface-curadoria-IAP.md)
 - [ADR-020 — Auto-população da Curadoria de Inconsistências](docs/adr/ADR-020-auto-populacao-curadoria-inconsistencias.md)
+- [ADR-021 — Correção: Suspeitos de Conversão Ausentes na Curadoria Unificada](docs/adr/ADR-021-correcao-suspeitos-conversao-ausentes-curadoria-unificada.md)
