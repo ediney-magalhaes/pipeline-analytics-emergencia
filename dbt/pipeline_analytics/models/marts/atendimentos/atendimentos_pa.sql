@@ -208,8 +208,39 @@ final as (
         when datetime_diff(a.DT_HR_ALTA, a.DT_HR_TOTEM_RECEP, minute) <= 360 then 1
         else 0 end as fl_alta_na_meta,
        case
+        when a.DT_HR_ALTA is null then null
+        when datetime_diff(a.DT_HR_ALTA, a.DT_HR_TOTEM_RECEP, minute) < 0 then null
+        when datetime_diff(a.DT_HR_ALTA, a.DT_HR_TOTEM_RECEP, minute) <= 360 then 'Dentro da meta'
+        when datetime_diff(a.DT_HR_ALTA, a.DT_HR_TOTEM_RECEP, minute) <= 720 then 'Fora da meta'
+        else 'Muito fora da meta'
+        end as faixa_sla,
+       case
         when a.INI_ATD_MEDICO is null then null
         else datetime_diff(a.INI_ATD_MEDICO, a.DT_HR_TOTEM_RECEP, minute) end as minutos_espera_medica,
+       case
+        when a.INICIO_CLASSIFICACAO is null then null
+        else datetime_diff(a.INICIO_CLASSIFICACAO, a.DT_HR_TOTEM_RECEP, minute) end as minutos_espera_classificacao,
+       case
+        when a.DT_HR_CLASSIF_RISCO is null then null
+        else datetime_diff(a.DT_HR_CLASSIF_RISCO, a.INICIO_CLASSIFICACAO, minute) end as minutos_duracao_classificacao,
+       case
+        when a.DH_CADASTRO_RECEPCAO is null then null
+        else datetime_diff(a.DH_CADASTRO_RECEPCAO, a.DT_HR_CLASSIF_RISCO, minute) end as minutos_espera_cadastro,
+       case
+        when a.FIM_CAD_RECEP is null then null
+        else datetime_diff(a.FIM_CAD_RECEP, a.DH_CADASTRO_RECEPCAO, minute) end as minutos_duracao_cadastro,
+       case
+        when a.INI_ATD_MEDICO is null then null
+        else datetime_diff(a.INI_ATD_MEDICO, a.FIM_CAD_RECEP, minute) end as minutos_espera_medica_pos_cadastro,
+       case
+        when a.FIM_ATD_MEDICO is null then null
+        else datetime_diff(a.FIM_ATD_MEDICO, a.INI_ATD_MEDICO, minute) end as minutos_duracao_atendimento_medico,
+       case
+        when a.DT_HR_ALTA is null then null
+        else datetime_diff(a.DT_HR_ALTA, a.FIM_ATD_MEDICO, minute) end as minutos_pos_atendimento_ate_alta,
+       case
+        when a.DT_HR_ALTA is null then null
+        else datetime_diff(a.DT_HR_ALTA, a.DT_HR_TOTEM_RECEP, minute) end as minutos_permanencia_total,
        a.competencia
     from atendimentos as a
     left join atendimento_com_internacoes as ai

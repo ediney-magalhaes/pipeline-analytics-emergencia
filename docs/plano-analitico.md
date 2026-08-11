@@ -60,7 +60,21 @@ Aponta rapidamente qual especialidade precisa de atenção.
 Funil completo do fluxo do paciente desde o totem até a alta, com tempo 
 médio em cada etapa: espera pra classificação, classificação, espera pra 
 recepção, cadastro, espera pro médico, atendimento médico, pós-atendimento 
-até a alta. Identificação de abandonos (pacientes que não completaram o ciclo).
+até a alta.
+
+**Indicador de desistência — retirado do escopo (Fase 1):** avaliado e 
+descartado após investigação de caso real. A classificação de "onde o 
+paciente parou" pressupõe que todo atendimento segue o fluxo padrão 
+(totem → classificação → cadastro → médico → alta), mas existem 
+atendimentos de natureza pontual (ex: procedimentos/infusões) que nunca 
+percorrem esse fluxo por definição — não é possível hoje distinguir esses 
+casos dos que de fato abandonaram o atendimento. Depende de um campo que 
+identifique o tipo/natureza do atendimento, inexistente na fonte atual. 
+Registrado como melhoria futura condicionada a esse dado.
+
+**Substituto adotado:** volume de atendimentos com cada marco da jornada 
+preenchido (não-nulo), por competência — mesma leitura visual de "onde o 
+funil estreita", sem exigir classificar a causa por atendimento individual.
 
 **Distribuição por percentil:** mostrar P50, P75, P90 e P95 dos tempos 
 em vez de apenas média. Emergência possui cauda longa — a média esconde 
@@ -74,7 +88,7 @@ permanência — dentro da meta (≤ 6h), fora da meta (6-12h), muito fora
 **Perguntas que responde:**
 - Onde está o gargalo dos pacientes que ultrapassam 6h de permanência?
 - Em qual etapa o tempo é consumido?
-- Quantos pacientes desistiram antes de completar o atendimento?
+- Em qual etapa o volume de atendimentos mais cai?
 - O que aconteceu com pacientes sem registro de alta?
 - Qual o tempo real de 50%, 75%, 90% e 95% dos pacientes em cada etapa?
 

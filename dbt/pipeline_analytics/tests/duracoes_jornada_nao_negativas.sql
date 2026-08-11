@@ -1,0 +1,9 @@
+select *
+from {{ ref('atendimentos_pa') }}
+where
+    (INICIO_CLASSIFICACAO is not null and INICIO_CLASSIFICACAO < DT_HR_TOTEM_RECEP)
+    or (DT_HR_CLASSIF_RISCO is not null and DT_HR_CLASSIF_RISCO < INICIO_CLASSIFICACAO)
+    or (DH_CADASTRO_RECEPCAO is not null and DH_CADASTRO_RECEPCAO < DT_HR_CLASSIF_RISCO)
+    or (FIM_CAD_RECEP is not null and FIM_CAD_RECEP < DH_CADASTRO_RECEPCAO)
+    or (INI_ATD_MEDICO is not null and INI_ATD_MEDICO < FIM_CAD_RECEP)
+    or (FIM_ATD_MEDICO is not null and FIM_ATD_MEDICO < INI_ATD_MEDICO)
