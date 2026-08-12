@@ -20,6 +20,15 @@ TIPO_POR_TESTE = {
     "atend_medico_apos_fim_cadastro": "sequencia_temporal",
 }
 
+# lista dos testes sem correção possível
+TESTES_SEM_CORRECAO = [
+    "classificacao_apos_totem_inicio",
+    "classif_risco_apos_inicio_classificacao",
+    "cadastro_apos_classif_risco",
+    "fim_cadastro_apos_inicio",
+    "atend_medico_apos_fim_cadastro",
+]
+
 # leitura do run_results para extração dos testes que falharam
 def ler_testes_com_falha(caminho_run_results):
     with open(caminho_run_results, "r") as f:
@@ -61,7 +70,7 @@ def montar_registro(cliente, teste_nome, tipo, atendimento, detectado_em):
         "competencia": str(atendimento["competencia"]),
         "servico": atendimento.get("SERVICO") or atendimento.get("servico") or "NAO_IDENTIFICADO",
         "detectado_em": detectado_em.isoformat(),
-        "status": "pendente",
+        "status": "nao_corrigivel" if teste_nome in TESTES_SEM_CORRECAO else "pendente",
     }
 
 # buscar suspeitos de conversão direto na marts
