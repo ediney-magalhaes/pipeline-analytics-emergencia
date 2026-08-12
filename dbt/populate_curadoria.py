@@ -13,6 +13,11 @@ TIPO_POR_TESTE = {
     "fim_atend_medico_apos_inicio": "sequencia_temporal",
     "permanencia_nao_negativa": "sequencia_temporal",
     "dbt_utils_unique_combination_of_columns_atendimentos_pa_atend_PA__competencia": "integridade",
+    "classificacao_apos_totem_inicio": "sequencia_temporal",
+    "classif_risco_apos_inicio_classificacao": "sequencia_temporal",
+    "cadastro_apos_classif_risco": "sequencia_temporal",
+    "fim_cadastro_apos_inicio": "sequencia_temporal",
+    "atend_medico_apos_fim_cadastro": "sequencia_temporal",
 }
 
 # leitura do run_results para extração dos testes que falharam
