@@ -58,9 +58,9 @@ Aponta rapidamente qual especialidade precisa de atenção.
 
 ### Página 2 — Jornada do Paciente
 Funil completo do fluxo do paciente desde o totem até a alta, com tempo 
-médio em cada etapa: espera pra classificação, classificação, espera pra 
-recepção, cadastro, espera pro médico, atendimento médico, pós-atendimento 
-até a alta.
+típico e cauda longa (P50/P90) em cada etapa: espera pra classificação, 
+classificação, espera pra recepção, cadastro, espera pro médico, 
+atendimento médico.
 
 **Indicador de desistência — retirado do escopo (Fase 1):** avaliado e 
 descartado após investigação de caso real. A classificação de "onde o 

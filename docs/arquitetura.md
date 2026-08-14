@@ -53,6 +53,10 @@ estão organizados em subpastas por domínio:
   e `COR_CLASSIF`
 - `ranking/` — tabela `ranking_especialidades` com indicador composto de desempenho 
   por especialidade, particionada por `competencia` (DATE), sem clusterização
+- `jornada/` — tabelas `percentis_jornada` e `volume_jornada`, agregações por
+  competência e especialidade que sustentam o funil e as métricas de tempo da
+  Página 2 (Jornada do Paciente). Sem clusterização — tabelas pequenas, poucas
+  centenas de linhas
 
 Detalhes da decisão de reorganização no ADR-015.
 
@@ -68,6 +72,13 @@ Camada de governança e revisão humana dos dados. Localizada dentro do projeto:
   de negócio (ex: flags logicamente excludentes)
 - `curadoria_imputacao_integridade` — correções humanas de valores impossíveis ou
   ausentes confirmados no sistema fonte (MV)
+- `curadoria_inconsistencias` — registro automático de todas as inconsistências
+  detectadas pelos testes de negócio, populada pelo pipeline após cada execução
+  do dbt. Serve como base para monitoramento de tendência e visibilidade à diretoria.
+  Possui três status: `pendente` (aguarda revisão humana), `revisado` (decisão
+  registrada) e `nao_corrigivel` (inconsistência confirmada na origem, sem valor
+  real recuperável para correção — não aparece na interface de revisão, mas
+  permanece rastreável para análise de taxa de correção). Detalhes no ADR-022
 
 ## Fonte dos Dados
 
@@ -139,7 +150,7 @@ execução registrados no BigQuery a cada execução do pipeline.
 **Implementado:**
 - Logs de execução nos scripts Python — registram quantidade de linhas 
   carregadas, duplicatas removidas e erros
-- 47 testes de qualidade no dbt — validação de chaves únicas, valores nulos,
+- 53 testes de qualidade no dbt — validação de chaves únicas, valores nulos,
   valores esperados e testes singulares de negócio
 - Lock por competência no Cloud Storage — evita acionamento múltiplo do dbt 
   Job em uploads simultâneos
@@ -147,8 +158,9 @@ execução registrados no BigQuery a cada execução do pipeline.
   ingestão para evitar re-upload acidental
 - Alertas automáticos via Cloud Monitoring em caso de falha na execução
 - Limpeza manual de locks a cada 2 meses — procedimento documentado no RUNBOOK
-- 6 testes de negócio no dbt — validação de regras como permanência não negativa,
-  sequência temporal de eventos e exclusividade entre flags
+- 13 testes de negócio no dbt — validação de regras como permanência não negativa,
+  sequência temporal de eventos (incluindo as etapas da jornada do paciente),
+  exclusividade entre flags e consistência estatística de percentis
 
 **Planejado:**
 - Observabilidade analítica — painel de saúde do pipeline com monitoramento 

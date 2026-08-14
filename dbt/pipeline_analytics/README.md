@@ -16,8 +16,11 @@ dbt/
 │   └── marts/            # Modelos de negócio — leem do Staged
 │       ├── atendimentos/
 │       │   └── atendimentos_pa.sql
-│       └── ranking/
-│           └── ranking_especialidades.sql
+│       ├── ranking/
+│       │   └── ranking_especialidades.sql
+│       └── jornada/
+│           ├── percentis_jornada.sql
+│           └── volume_jornada.sql
 ├── seeds/                # Dados de referência estáticos
 │   └── dim_leitos.csv    # Cadastro de referência para as movimentações de leitos no hospital
 ├── macros/               # Macros reutilizáveis
@@ -40,6 +43,7 @@ e convertida de STRING para DATE no staged.
 A clusterização é configurada por subpasta no `dbt_project.yml`:
 - `marts/atendimentos/` — clusterizada por `SERVICO`, `CONVENIO` e `COR_CLASSIF`
 - `marts/ranking/` — sem clusterização (tabela pequena, ~10 linhas por competência)
+- `marts/jornada/` — sem clusterização (tabelas agregadas, poucas centenas de linhas)
 
 Detalhes da decisão no ADR-015.
 
@@ -55,7 +59,11 @@ Configuração centralizada no `dbt_project.yml`.
 | `fl_evasao` | atendimentos_pa | Paciente evadiu sem alta médica |
 | `turno` | atendimentos_pa | Turno de chegada derivado do horário do totem (Manhã, Tarde, Noite, Madrugada) |
 | `faixa_etaria` | atendimentos_pa | Faixa etária do paciente derivada da idade |
+| `faixa_sla` | atendimentos_pa | Classificação da permanência total em 3 faixas (dentro/fora/muito fora da meta) |
+| `minutos_espera_classificacao` a `minutos_permanencia_total` | atendimentos_pa | Durações por etapa da jornada do paciente — ver ficha técnica de métricas |
 | `total_pontos` | ranking_especialidades | Indicador composto ponderado de desempenho por especialidade |
+| `p50`, `p90` | percentis_jornada | Percentis de duração por etapa, competência e especialidade |
+| `volume` | volume_jornada | Volume de atendimentos por marco da jornada, competência e especialidade (funil) |
 
 ## Comandos
 
@@ -73,7 +81,7 @@ dbt docs generate && dbt docs serve  # Documentação
 
 ## Testes
 
-O projeto conta com 41 testes automatizados:
+O projeto conta com 53 testes automatizados:
 
 - `not_null` e `unique` nos campos-chave de staging e marts
 - `not_null` em `competencia` em todas as tabelas (staged e marts)
@@ -81,11 +89,16 @@ O projeto conta com 41 testes automatizados:
 - `accepted_values` em `turno` e `faixa_etaria`
 - `accepted_values` nas posições do ranking (1 a 6)
 - `dbt_utils.unique_combination_of_columns` no ranking (SERVICO + competencia)
-- Teste singular `movimentacoes_nulos_invalidos` — valida que nenhuma linha com número de atendimento válido possui `Hora` ou `Destino` nulos
+- Testes de sequência temporal — cada etapa da jornada deve ocorrer após a
+  anterior (ex: `cadastro_apos_classif_risco`, `atend_medico_apos_fim_cadastro`)
+- Teste `percentis_p90_maior_p50` — garante consistência estatística entre os
+  percentis calculados
+- Teste singular `movimentacoes_nulos_invalidos` — valida que nenhuma linha com
+  número de atendimento válido possui `Hora` ou `Destino` nulos
 
-**Planejado:** 9 testes de negócio para validação de regras como permanência 
-não negativa, sequência temporal de eventos e exclusividade entre flags. 
-Detalhes no plano analítico.
+**Nota:** parte dos testes de sequência temporal captura inconsistências sem
+correção possível na origem — esses casos são registrados na curadoria com
+status `nao_corrigivel`, não `pendente` (ver interface de curadoria).
 
 ## Configuração
 O projeto utiliza macro `generate_schema_name` para roteamento correto 

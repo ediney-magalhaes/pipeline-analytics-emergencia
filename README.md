@@ -93,3 +93,4 @@ git push
 - [ADR-019 — Autenticação da Interface de Curadoria via IAP](docs/adr/ADR-019-autenticacao-interface-curadoria-IAP.md)
 - [ADR-020 — Auto-população da Curadoria de Inconsistências](docs/adr/ADR-020-auto-populacao-curadoria-inconsistencias.md)
 - [ADR-021 — Correção: Suspeitos de Conversão Ausentes na Curadoria Unificada](docs/adr/ADR-021-correcao-suspeitos-conversao-ausentes-curadoria-unificada.md)
+- [ADR-022 — Testes de Sequência Temporal Individualizados e Status "Não Corrigível" na Curadoria](docs/adr/ADR-022-testes-sequencia-temporal-status-nao-corrigivel.md)
