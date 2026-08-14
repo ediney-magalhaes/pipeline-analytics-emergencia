@@ -268,6 +268,114 @@ do indicador, sem tolerância definida.
 
 **Direção:** Negativo — quanto menor o valor, melhor o desempenho.
 
+
+---
+
+## Indicadores — Página 2 (Jornada do Paciente)
+
+Indicadores calculados no modelo `atendimentos_pa` (campos por atendimento) e
+nos modelos agregados `percentis_jornada` e `volume_jornada` (por competência
+e especialidade).
+
+### `faixa_sla`
+
+**Definição:** Classificação categórica da permanência total do atendimento
+(do totem à alta) em três faixas de SLA.
+
+**Regra:**
+| Faixa | Condição |
+|---|---|
+| Dentro da meta | Permanência ≤ 360 minutos (6h) |
+| Fora da meta | Permanência entre 361 e 720 minutos (6h–12h) |
+| Muito fora da meta | Permanência > 720 minutos (12h) |
+
+**Exclusões:** Atendimentos sem `DT_HR_ALTA`, e casos com `DT_HR_ALTA` anterior
+ao totem (inconsistência de dado), retornam `null` — não entram em nenhuma
+faixa.
+
+**Diferença em relação a `fl_alta_na_meta` (KPI 3):** `fl_alta_na_meta` é
+binário e penaliza a ausência de alta para uso no ranking de pontuação das
+especialidades (usado para cálculo de taxa). `faixa_sla`não penaliza — serve
+para visualização granular por atendimento, não para métricas agregadas de desempenho.
+
+---
+
+### Durações por etapa da jornada
+
+Calculadas em `atendimentos_pa` como a diferença, em minutos, entre o timestamp
+de chegada em cada etapa e o timestamp da etapa anterior.
+
+| Campo | Etapa | Do timestamp | Ao timestamp |
+|---|---|---|---|
+| `minutos_espera_classificacao` | Espera para classificação | `DT_HR_TOTEM_RECEP` | `INICIO_CLASSIFICACAO` |
+| `minutos_duracao_classificacao` | Duração da classificação | `INICIO_CLASSIFICACAO` | `DT_HR_CLASSIF_RISCO` |
+| `minutos_espera_cadastro` | Espera para cadastro | `DT_HR_CLASSIF_RISCO` | `DH_CADASTRO_RECEPCAO` |
+| `minutos_duracao_cadastro` | Duração do cadastro | `DH_CADASTRO_RECEPCAO` | `FIM_CAD_RECEP` |
+| `minutos_espera_medica_pos_cadastro` | Espera para o médico (pós-cadastro) | `FIM_CAD_RECEP` | `INI_ATD_MEDICO` |
+| `minutos_duracao_atendimento_medico` | Duração do atendimento médico | `INI_ATD_MEDICO` | `FIM_ATD_MEDICO` |
+| `minutos_permanencia_total` | Permanência total | `DT_HR_TOTEM_RECEP` | `DT_HR_ALTA` |
+
+**Exclusões (regra comum a todas):** Retornam `null` quando o timestamp de
+destino é nulo, **ou** quando o timestamp de destino é anterior ao de origem
+(inconsistência de sequência temporal, capturada pelos testes de qualidade
+correspondentes — ver seção de testes de negócio).
+
+**Etapa descartada:** `minutos_pos_atendimento_ate_alta` (fim do atendimento
+médico → alta) foi avaliada e removida do escopo. Em ~82% dos casos
+`DT_HR_ALTA` antecede `FIM_ATD_MEDICO` — não é erro de dado, é uma
+particularidade operacional (registro de alta antecede o fechamento do atendimento
+pelo médico no sistema). Sem uma sequência confiável entre os dois eventos, 
+a duração não é uma métrica válida.
+
+**Nota:** `minutos_espera_medica` (já existente, fora desta tabela) mede
+`DT_HR_TOTEM_RECEP → INI_ATD_MEDICO` diretamente — é uma métrica diferente
+("tempo até o médico"), não uma etapa do funil sequencial.
+
+---
+
+### Percentis por etapa (`percentis_jornada`)
+
+**Definição:** P50 (mediana) e P90 de cada duração listada acima, agregados
+por competência e especialidade (`SERVICO`).
+
+**Por que percentil em vez de média:** o PA tem cauda longa, poucos casos
+extremos distorcem a média e escondem gargalos reais. P50 mostra o tempo
+típico; P90 mostra o teto para a grande maioria dos casos, expondo a cauda
+longa sem a instabilidade estatística de percentis mais extremos (ex: P95)
+em grupos com poucos atendimentos.
+
+**Cálculo:** `APPROX_QUANTILES(duração, 100)`, extraindo os offsets 50 e 90.
+
+**Formato:** uma linha por competência + especialidade + etapa, com colunas
+`p50` e `p90` (formato longo, não uma coluna por percentil).
+
+**Validação:** teste de qualidade `percentis_p90_maior_p50` garante que P90
+nunca seja menor que P50 na mesma linha.
+
+---
+
+### Volume por etapa (`volume_jornada`)
+
+**Definição:** Contagem de atendimentos com cada marco da jornada preenchido
+(não-nulo), por competência e especialidade. Insumo para o funil visual da
+Página 2.
+
+**Marcos contados (8):** Totem, Início Classificação, Fim Classificação,
+Início Cadastro, Fim Cadastro, Início Médico, Fim Médico, Alta.
+
+**Origem da decisão:** substitui o indicador de desistência, avaliado e
+descartado (ver `plano-analitico.md`) — o dado não permite distinguir
+"paciente que desistiu" de "atendimento de natureza pontual que não segue o
+fluxo padrão" (ex: procedimentos/infusões). O volume por etapa responde "onde
+o funil estreita" sem exigir esse julgamento por atendimento individual, e
+também cobre a pergunta "o que aconteceu com pacientes sem registro de alta?"
+(marco "Alta" no funil).
+
+**Nota:** não há garantia de decrescimento estrito entre etapas consecutivas —
+atendimentos que pulam etapas (ex: procedimentos pontuais) podem gerar
+pequenas inversões de volume entre marcos adjacentes. Validado como
+comportamento esperado (~1% dos atendimentos), não uma inconsistência de dado.
+
 ---
 
 ## Histórico de Alterações
@@ -275,3 +383,4 @@ do indicador, sem tolerância definida.
 | Data | Alteração |
 |---|---|
 | 2026-05-29 | Criação do documento com flags de negócio e KPIs da Página 1 |
+| 2026-08-14 | Adição dos KPIs da Página 2 |
