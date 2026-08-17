@@ -172,6 +172,7 @@ final as (
        ai.Destino,
        ai.Unidade,
        ai.Tipo,
+       cid_map.capitulo_cid as grupo_cid,
        case
         when a.DT_HR_TOTEM_RECEP is null then null
         when extract(hour from a.DT_HR_TOTEM_RECEP) between 7 and 11 then 'Manhã'
@@ -254,6 +255,8 @@ final as (
     on a.CD_ATENDIMENTO = pc.CD_ATENDIMENTO
     left join {{ source('curadoria', 'curadoria_conversao') }} as cur
     on a.CD_ATENDIMENTO = cast(cur.CD_ATENDIMENTO as INT64)
+    left join {{ ref('seed_cid_capitulo') }} as cid_map
+    on split(a.CID, ' - ')[offset(0)] = cid_map.codigo_cid
 )
 
 select * from final
