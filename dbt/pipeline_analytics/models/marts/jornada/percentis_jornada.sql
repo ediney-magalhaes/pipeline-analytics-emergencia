@@ -52,16 +52,17 @@ percentis_longos as(
         grupo_cid,
         etapas.nome_etapa,
         etapas.array_valores[offset(50)] as p50,
-        etapas.array_valores[offset(90)] as p90
+        etapas.array_valores[offset(90)] as p90,
+        etapas.ordem
     from arrays_percentis_unificado,
     unnest([
-        struct('Espera classificação' as nome_etapa, minutos_espera_classificacao as array_valores),
-        struct('Duração classificação' as nome_etapa, minutos_duracao_classificacao as array_valores),
-        struct('Espera cadastro' as nome_etapa, minutos_espera_cadastro as array_valores),
-        struct('Duração cadastro' as nome_etapa, minutos_duracao_cadastro as array_valores),
-        struct('Espera atendimento médico' as nome_etapa, minutos_espera_medica_pos_cadastro as array_valores),
-        struct('Duração atendimento médico' as nome_etapa, minutos_duracao_atendimento_medico as array_valores),
-        struct('Tempo permanência' as nome_etapa, minutos_permanencia_total as array_valores)
+        struct('Espera classificação' as nome_etapa, minutos_espera_classificacao as array_valores, 1 as ordem),
+        struct('Duração classificação' as nome_etapa, minutos_duracao_classificacao as array_valores, 2 as ordem),
+        struct('Espera cadastro' as nome_etapa, minutos_espera_cadastro as array_valores, 3 as ordem),
+        struct('Duração cadastro' as nome_etapa, minutos_duracao_cadastro as array_valores, 4 as ordem),
+        struct('Espera atendimento médico' as nome_etapa, minutos_espera_medica_pos_cadastro as array_valores, 5 as ordem),
+        struct('Duração atendimento médico' as nome_etapa, minutos_duracao_atendimento_medico as array_valores, 6 as ordem),
+        struct('Tempo permanência' as nome_etapa, minutos_permanencia_total as array_valores, 7 as ordem)
     ]) as etapas
 )
 
