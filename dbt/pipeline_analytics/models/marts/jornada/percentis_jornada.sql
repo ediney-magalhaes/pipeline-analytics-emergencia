@@ -13,6 +13,27 @@ with arrays_percentis as(
     group by SERVICO, competencia
 ),
 
+arrays_percentis_geral as(
+    select
+        'Todas' as SERVICO,
+        competencia,
+        approx_quantiles(minutos_espera_classificacao, 100) as minutos_espera_classificacao,
+        approx_quantiles(minutos_duracao_classificacao, 100) as minutos_duracao_classificacao,
+        approx_quantiles(minutos_espera_cadastro, 100) as minutos_espera_cadastro,
+        approx_quantiles(minutos_duracao_cadastro, 100) as minutos_duracao_cadastro,
+        approx_quantiles(minutos_espera_medica_pos_cadastro, 100) as minutos_espera_medica_pos_cadastro,
+        approx_quantiles(minutos_duracao_atendimento_medico, 100) as minutos_duracao_atendimento_medico,
+        approx_quantiles(minutos_permanencia_total, 100) as minutos_permanencia_total
+    from {{ ref('atendimentos_pa') }}
+    group by competencia
+),
+
+arrays_percentis_unificado as(
+    select * from arrays_percentis
+    union all
+    select * from arrays_percentis_geral
+),
+
 percentis_longos as(
     select
         SERVICO,
@@ -20,7 +41,7 @@ percentis_longos as(
         etapas.nome_etapa,
         etapas.array_valores[offset(50)] as p50,
         etapas.array_valores[offset(90)] as p90
-    from arrays_percentis,
+    from arrays_percentis_unificado,
     unnest([
         struct('Espera classificação' as nome_etapa, minutos_espera_classificacao as array_valores),
         struct('Duração classificação' as nome_etapa, minutos_duracao_classificacao as array_valores),
