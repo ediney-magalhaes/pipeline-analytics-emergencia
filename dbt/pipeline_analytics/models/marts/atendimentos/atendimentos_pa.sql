@@ -172,7 +172,7 @@ final as (
        ai.Destino,
        ai.Unidade,
        ai.Tipo,
-       cid_map.capitulo_cid as grupo_cid,
+       trim(initcap(cid_map.capitulo_cid)) as grupo_cid,
        case
         when a.DT_HR_TOTEM_RECEP is null then null
         when extract(hour from a.DT_HR_TOTEM_RECEP) between 7 and 11 then 'Manhã'
