@@ -150,7 +150,11 @@ final as (
        a.UF,
        a.CONVENIO,
        a.SERVICO,
-       a.COR_CLASSIF,
+       case
+        when a.COR_CLASSIF is null then 'Ausência de Classificação'
+        when a.COR_CLASSIF = '' then 'Ausência de Classificação'
+        else a.COR_CLASSIF
+       end as COR_CLASSIF,
        a.PRESTADOR,
        a.ESPECIALIDADE,
        a.CID,
