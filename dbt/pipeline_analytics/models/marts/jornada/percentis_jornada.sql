@@ -36,10 +36,30 @@ arrays_percentis_geral as(
     group by competencia
 ),
 
+arrays_percentis_total as(
+    select
+        'Todas' as SERVICO,
+        cast(null as date) as competencia,
+        'Todas' as turno,
+        'Todas' as CONVENIO,
+        'Todas' as COR_CLASSIF,
+        'Todas' as grupo_cid,
+        approx_quantiles(minutos_espera_classificacao, 100) as minutos_espera_classificacao,
+        approx_quantiles(minutos_duracao_classificacao, 100) as minutos_duracao_classificacao,
+        approx_quantiles(minutos_espera_cadastro, 100) as minutos_espera_cadastro,
+        approx_quantiles(minutos_duracao_cadastro, 100) as minutos_duracao_cadastro,
+        approx_quantiles(minutos_espera_medica_pos_cadastro, 100) as minutos_espera_medica_pos_cadastro,
+        approx_quantiles(minutos_duracao_atendimento_medico, 100) as minutos_duracao_atendimento_medico,
+        approx_quantiles(minutos_permanencia_total, 100) as minutos_permanencia_total
+    from {{ ref('atendimentos_pa') }}
+),
+
 arrays_percentis_unificado as(
     select * from arrays_percentis
     union all
     select * from arrays_percentis_geral
+    union all
+    select * from arrays_percentis_total
 ),
 
 percentis_longos as(
