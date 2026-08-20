@@ -6,6 +6,7 @@ with volumes as(
         CONVENIO,
         COR_CLASSIF,
         grupo_cid,
+        faixa_sla,
         countif(DT_HR_TOTEM_RECEP is not null) as volume_totem,
         countif(INICIO_CLASSIFICACAO is not null) as volume_inicio_classificacao,
         countif(DT_HR_CLASSIF_RISCO is not null) as volume_fim_classificacao,
@@ -15,7 +16,7 @@ with volumes as(
         countif(FIM_ATD_MEDICO is not null) as volume_fim_medico,
         countif(DT_HR_ALTA is not null) as volume_alta
     from {{ ref('atendimentos_pa') }}
-    group by 1, 2, 3, 4, 5, 6
+    group by 1, 2, 3, 4, 5, 6, 7
 ),
 
 volumes_longos as(
@@ -26,6 +27,7 @@ volumes_longos as(
         CONVENIO,
         COR_CLASSIF,
         grupo_cid,
+        faixa_sla,
         etapas.nome_etapa,
         etapas.volume,
         etapas.ordem
