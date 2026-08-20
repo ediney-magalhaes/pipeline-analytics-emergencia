@@ -76,10 +76,15 @@ Registrado como melhoria futura condicionada a esse dado.
 preenchido (não-nulo), por competência — mesma leitura visual de "onde o 
 funil estreita", sem exigir classificar a causa por atendimento individual.
 
-**Distribuição por percentil:** mostrar P50, P75, P90 e P95 dos tempos 
-em vez de apenas média. Emergência possui cauda longa — a média esconde 
-gargalos. Cálculo feito no dbt com `APPROX_QUANTILES` pra não sobrecarregar 
-o Power BI.
+**Distribuição por percentil:** mostrar P50 e P90 dos tempos em vez de
+apenas média. Emergência possui cauda longa, a média esconde gargalos.
+P75 e P95 foram descartados: mais dimensões de cruzamento (necessárias para
+os 6 filtros da página) geram grupos pequenos onde percentis extremos ficam
+estatisticamente instáveis, mesmo motivo que já descartava P95 isoladamente.
+Cálculo pré-agregado no dbt com `APPROX_QUANTILES` para consolidados gerais
+e auditoria; card e tabela de duração calculam sob demanda em DAX
+(`PERCENTILEX.INC` sobre `atendimentos_pa`) para suportar filtro de
+competência livre (ver ficha técnica de métricas).
 
 **SLA visual com faixas:** classificar cada atendimento em faixas de 
 permanência — dentro da meta (≤ 6h), fora da meta (6-12h), muito fora 
@@ -90,14 +95,21 @@ permanência — dentro da meta (≤ 6h), fora da meta (6-12h), muito fora
 - Em qual etapa o tempo é consumido?
 - Em qual etapa o volume de atendimentos mais cai?
 - O que aconteceu com pacientes sem registro de alta?
-- Qual o tempo real de 50%, 75%, 90% e 95% dos pacientes em cada etapa?
+- Qual o tempo real de 50% e 90% dos pacientes em cada etapa?
 
-**Filtros:** especialidade, turno, convênio, classificação de risco, CID
+**Filtros:** especialidade, turno, convênio, classificação de risco, grupo
+CID (Capítulo CID-10, via seed `seed_cid_capitulo`), competência. CID bruto
+avaliado e descartado como filtro, volume alto de códigos distintos sem
+agrupamento natural, incompatível com um dropdown utilizável; grupo CID
+resolve o mesmo caso de uso (fluxo por tipo de queixa na entrada) com
+volume de opções gerenciável (~23 capítulos).
 
 **Campos necessários:** ~~não estão na marts hoje~~ ✅ Timestamps trazidos 
 para a marts (sessão 19/05). Campos: CHAMADA_CLASSIFICACAO, 
 INICIO_CLASSIFICACAO, CHAMADA_CAD_RECEP, DH_CADASTRO_RECEPCAO, FIM_CAD_RECEP, 
-DH_ATEND_MEDICO. Campo calculado turno ✅ criado na marts.
+DH_ATEND_MEDICO. Campo calculado turno ✅ criado na marts. Campo `grupo_cid`
+✅ criado via seed `seed_cid_capitulo` (sessão 20/08). Correção de
+capitalização e espaços em `grupo_cid` ✅ (sessão 20/08).
 
 ### Página 3 — Perfil do Paciente
 Características demográficas: pirâmide etária, distribuição por sexo, mapa 
@@ -265,7 +277,8 @@ Notificação automática quando algo estiver fora do esperado.
 - ~~Construir Página 1 no Power BI~~ ✅
 - Carga histórica de ~24 meses
 - Validar Página 1 com dados históricos
-- Construir Páginas 2 a 7 (conforme dados disponíveis na Fase 1)
+- ~~Construir Página 2 (Jornada do Paciente)~~ ✅ (sessão 20/08)
+- Construir Páginas 3 a 7 (conforme dados disponíveis na Fase 1)
 
 ### Fase 2 — Exames e prescrição
 Incorporar ao pipeline novas fontes do sistema MV:

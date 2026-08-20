@@ -280,7 +280,7 @@ e especialidade).
 ### `faixa_sla`
 
 **Definição:** Classificação categórica da permanência total do atendimento
-(do totem à alta) em três faixas de SLA.
+(do totem à alta) em quatro categorias de SLA.
 
 **Regra:**
 | Faixa | Condição |
@@ -288,10 +288,14 @@ e especialidade).
 | Dentro da meta | Permanência ≤ 360 minutos (6h) |
 | Fora da meta | Permanência entre 361 e 720 minutos (6h–12h) |
 | Muito fora da meta | Permanência > 720 minutos (12h) |
+| Alta não registrada | `DT_HR_ALTA` nulo |
+| Registro inconsistente | `DT_HR_ALTA` anterior ao totem (inconsistência de sequência) |
 
-**Exclusões:** Atendimentos sem `DT_HR_ALTA`, e casos com `DT_HR_ALTA` anterior
-ao totem (inconsistência de dado), retornam `null` — não entram em nenhuma
-faixa.
+**Nota de implementação:** as duas últimas categorias eram originalmente
+representadas como `null` na coluna. Foram convertidas em texto explícito em
+2026-08-17 porque `null` impedia a criação de relacionamento de chave única
+entre `atendimentos_pa` e `volume_jornada` no modelo do Power BI (necessário
+para que o gráfico de SLA respeite os mesmos filtros do restante da Página 2).
 
 **Diferença em relação a `fl_alta_na_meta` (KPI 3):** `fl_alta_na_meta` é
 binário e penaliza a ausência de alta para uso no ranking de pontuação das
@@ -336,7 +340,17 @@ a duração não é uma métrica válida.
 ### Percentis por etapa (`percentis_jornada`)
 
 **Definição:** P50 (mediana) e P90 de cada duração listada acima, agregados
-por competência e especialidade (`SERVICO`).
+por competência, especialidade (`SERVICO`), turno, convênio, classificação de
+risco (`COR_CLASSIF`) e grupo CID (`grupo_cid`), as 6 dimensões de filtro da
+Página 2.
+
+**Linhas consolidadas:** para cada dimensão categórica (especialidade, turno,
+convênio, classificação de risco, grupo CID), existe também uma linha com
+valor `'Todas'`, representando o consolidado daquela dimensão, necessário
+para que os cards e visuais da página mostrem um resultado coerente quando
+nenhum filtro específico está selecionado. Existe ainda uma linha totalmente
+consolidada (todas as 5 dimensões categóricas em `'Todas'` e `competencia`
+nula), representando o histórico completo.
 
 **Por que percentil em vez de média:** o PA tem cauda longa, poucos casos
 extremos distorcem a média e escondem gargalos reais. P50 mostra o tempo
@@ -346,19 +360,32 @@ em grupos com poucos atendimentos.
 
 **Cálculo:** `APPROX_QUANTILES(duração, 100)`, extraindo os offsets 50 e 90.
 
-**Formato:** uma linha por competência + especialidade + etapa, com colunas
-`p50` e `p90` (formato longo, não uma coluna por percentil).
+**Formato:** uma linha por competência + especialidade + turno + convênio +
+classificação de risco + grupo CID + etapa, com colunas `p50` e `p90`
+(formato longo, não uma coluna por percentil). Inclui a coluna `ordem` para
+ordenação correta das etapas na exibição.
 
 **Validação:** teste de qualidade `percentis_p90_maior_p50` garante que P90
 nunca seja menor que P50 na mesma linha.
+**Limitação de uso no Power BI:** apesar de pré-calculada, esta tabela não
+suporta filtro de competência livre (seleção de múltiplos meses arbitrários)
+sem gerar uma linha nova por combinação, inviável dado o número de
+combinações possíveis. Por isso, o card de Permanência Mediana e a tabela de
+Duração por Etapa da Página 2 calculam P50/P90 sob demanda em DAX
+(`PERCENTILEX.INC` sobre `atendimentos_pa`, filtrando valores nulos), não a
+partir desta tabela. `percentis_jornada` permanece útil para auditoria e
+validação cruzada de valores, mas não é a fonte de nenhum visual interativo
+da página.
 
 ---
 
 ### Volume por etapa (`volume_jornada`)
 
 **Definição:** Contagem de atendimentos com cada marco da jornada preenchido
-(não-nulo), por competência e especialidade. Insumo para o funil visual da
-Página 2.
+(não-nulo), por competência, especialidade, turno, convênio, classificação de
+risco, grupo CID e faixa de SLA, as 6 dimensões de filtro da página mais a
+dimensão do gráfico de SLA (usada para a interação de clique entre os dois
+visuais). Insumo para o funil visual da Página 2.
 
 **Marcos contados (8):** Totem, Início Classificação, Fim Classificação,
 Início Cadastro, Fim Cadastro, Início Médico, Fim Médico, Alta.
@@ -376,6 +403,13 @@ atendimentos que pulam etapas (ex: procedimentos pontuais) podem gerar
 pequenas inversões de volume entre marcos adjacentes. Validado como
 comportamento esperado (~1% dos atendimentos), não uma inconsistência de dado.
 
+**Por que esta tabela permanece pré-calculada (diferente de `percentis_jornada`):**
+contagem (`COUNT`) é uma operação que se combina corretamente entre grupos,
+a soma de contagens parciais sempre equivale à contagem total, diferente de
+mediana/percentil. Por isso, cruzar as 6+1 dimensões nesta tabela não introduz
+o mesmo risco estatístico, e o pré-cálculo no dbt continua sendo a abordagem
+correta aqui.
+
 ---
 
 ## Histórico de Alterações
@@ -384,3 +418,4 @@ comportamento esperado (~1% dos atendimentos), não uma inconsistência de dado.
 |---|---|
 | 2026-05-29 | Criação do documento com flags de negócio e KPIs da Página 1 |
 | 2026-08-14 | Adição dos KPIs da Página 2 |
+| 2026-08-17 | Página 2 finalizada: `faixa_sla` com 4 categorias (nulos tratados), `percentis_jornada` e `volume_jornada` expandidos para as 6 dimensões de filtro + `grupo_cid`, card de P50 e tabela de Duração por Etapa migrados para cálculo sob demanda via `PERCENTILEX.INC` |

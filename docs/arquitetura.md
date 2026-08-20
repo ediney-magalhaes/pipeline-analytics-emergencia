@@ -54,9 +54,10 @@ estão organizados em subpastas por domínio:
 - `ranking/` — tabela `ranking_especialidades` com indicador composto de desempenho 
   por especialidade, particionada por `competencia` (DATE), sem clusterização
 - `jornada/` — tabelas `percentis_jornada` e `volume_jornada`, agregações por
-  competência e especialidade que sustentam o funil e as métricas de tempo da
-  Página 2 (Jornada do Paciente). Sem clusterização — tabelas pequenas, poucas
-  centenas de linhas
+  competência, especialidade, turno, convênio, classificação de risco e grupo
+  CID que sustentam o funil e as métricas de tempo da Página 2 (Jornada do
+  Paciente). Sem clusterização — `volume_jornada` ~131k linhas, `percentis_jornada`
+  ~96k linhas, após expansão para suportar os 6 filtros da página
 
 Detalhes da decisão de reorganização no ADR-015.
 
