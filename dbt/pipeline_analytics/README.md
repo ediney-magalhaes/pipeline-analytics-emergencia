@@ -22,7 +22,8 @@ dbt/
 │           ├── percentis_jornada.sql
 │           └── volume_jornada.sql
 ├── seeds/                # Dados de referência estáticos
-│   └── dim_leitos.csv    # Cadastro de referência para as movimentações de leitos no hospital
+│   ├── dim_leitos.csv         # Cadastro de referência para as movimentações de leitos no hospital
+│   └── seed_cid_capitulo.csv  # De-para CID-10 → Capítulo (nível agregado), 14.235 códigos únicos
 ├── macros/               # Macros reutilizáveis
 └── dbt_project.yml       # Configuração do projeto
 ```
@@ -43,7 +44,9 @@ e convertida de STRING para DATE no staged.
 A clusterização é configurada por subpasta no `dbt_project.yml`:
 - `marts/atendimentos/` — clusterizada por `SERVICO`, `CONVENIO` e `COR_CLASSIF`
 - `marts/ranking/` — sem clusterização (tabela pequena, ~10 linhas por competência)
-- `marts/jornada/` — sem clusterização (tabelas agregadas, poucas centenas de linhas)
+- `marts/jornada/` — sem clusterização (tabelas agregadas; `volume_jornada` ~131k linhas, 
+  `percentis_jornada` ~96k linhas, após expansão para suportar os 6 filtros da Página 2 — 
+  volume que pode justificar reavaliação futura de clusterização)
 
 Detalhes da decisão no ADR-015.
 
@@ -59,7 +62,8 @@ Configuração centralizada no `dbt_project.yml`.
 | `fl_evasao` | atendimentos_pa | Paciente evadiu sem alta médica |
 | `turno` | atendimentos_pa | Turno de chegada derivado do horário do totem (Manhã, Tarde, Noite, Madrugada) |
 | `faixa_etaria` | atendimentos_pa | Faixa etária do paciente derivada da idade |
-| `faixa_sla` | atendimentos_pa | Classificação da permanência total em 3 faixas (dentro/fora/muito fora da meta) |
+| `faixa_sla` | atendimentos_pa | Classificação da permanência total em 4 categorias: Dentro da meta, Fora da meta, Muito fora da meta, e Alta não registrada (dado ausente tratado explicitamente) |
+| `grupo_cid` | atendimentos_pa | Capítulo da CID-10 (nível agregado) via JOIN com seed `seed_cid_capitulo`, usado como filtro na Página 2 (Jornada do Paciente) |
 | `minutos_espera_classificacao` a `minutos_permanencia_total` | atendimentos_pa | Durações por etapa da jornada do paciente — ver ficha técnica de métricas |
 | `total_pontos` | ranking_especialidades | Indicador composto ponderado de desempenho por especialidade |
 | `p50`, `p90` | percentis_jornada | Percentis de duração por etapa, competência e especialidade |
