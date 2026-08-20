@@ -213,8 +213,8 @@ final as (
         when datetime_diff(a.DT_HR_ALTA, a.DT_HR_TOTEM_RECEP, minute) <= 360 then 1
         else 0 end as fl_alta_na_meta,
        case
-        when a.DT_HR_ALTA is null then null
-        when datetime_diff(a.DT_HR_ALTA, a.DT_HR_TOTEM_RECEP, minute) < 0 then null
+        when a.DT_HR_ALTA is null then 'Alta não registrada'
+        when datetime_diff(a.DT_HR_ALTA, a.DT_HR_TOTEM_RECEP, minute) < 0 then 'Registro inconsistente'
         when datetime_diff(a.DT_HR_ALTA, a.DT_HR_TOTEM_RECEP, minute) <= 360 then 'Dentro da meta'
         when datetime_diff(a.DT_HR_ALTA, a.DT_HR_TOTEM_RECEP, minute) <= 720 then 'Fora da meta'
         else 'Muito fora da meta'
