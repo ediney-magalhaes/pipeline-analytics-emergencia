@@ -51,7 +51,7 @@ gcloud run jobs update dbt-pipeline-job --image us-east1-docker.pkg.dev/pipeline
 > gcloud artifacts docker tags list us-east1-docker.pkg.dev/pipeline-analytics-emergencia/pipeline-ingestao/dbt-pipeline
 > ```
 
-> **Versão atual:** `v44` (construída em 15/10/2026, com a deduplicação da `curadoria_conversao`). A `v42`, de 14/08/2026, estava atrasada em relação à `main` (ver "Problemas conhecidos").
+> **Versão atual:** `v46` (construída em 04/11/2026, com as colunas da Página 4: `ordem_turno`, `faixa_hora_2h`, `faixa_retorno`, `ordem_faixa_retorno` e `status_evasao`). A `v42`, de 14/08/2026, estava atrasada em relação à `main` (ver "Problemas conhecidos").
 
 ---
 
