@@ -1,7 +1,7 @@
 # Plano Analítico — Emergência
 
 **Data:** 2026-05-21  
-**Última atualização:** 2026-10-30  
+**Última atualização:** 2026-11-04  
 **Status:** Em construção
 
 ## Objetivo
@@ -197,19 +197,22 @@ aparecem em cada bloco como taxa, com a contagem no tooltip).
    barra e a contagem aparece no tooltip, porque os grupos graves têm 
    poucos casos (ex: Vermelho tem 35 atendimentos em 11 meses). Responde às 
    perguntas sobre gravidade, especialidade prevalente e CID.
-2. **Onde o evadido espera mais:** P50 do tempo de cada etapa da jornada, 
-   comparando evadidos e demais pacientes, com o P90 no tooltip. 
+2. **Onde o evadido passa mais tempo:** P50 do tempo de cada etapa da 
+   jornada, comparando evadidos e demais pacientes (legenda `evadiu` e 
+   `não evadiu`, de `status_evasao`), com o P90 no tooltip. A permanência 
+   total não entra, porque é o fim da jornada e não uma etapa. 
    Substituiu o bloco "Onde evade" (última etapa registrada), pois 99,9% 
    dos 3.000 evadidos têm Início Médico e Alta preenchidos: a última etapa 
    registrada não distingue os casos.
-3. **Quando evade:** mapa de calor por faixa de 2 horas × dia da semana, 
-   com a taxa na cor e a contagem no tooltip. Faixas de 2 horas (84 
+3. **Quando evade:** mapa de calor por faixa de 2 horas (`faixa_hora_2h`) × 
+   dia da semana, com a taxa na cor e a contagem no tooltip. Faixas de 2 horas (84 
    células), e não hora × dia (168 células): com um mês filtrado, hora × 
    dia daria cerca de 1,6 evasões por célula, o que é ruído.
 
 **Linha 2 — Retornos**
-4. **Depois da evasão:** barras por faixa de dias até o retorno (até 2 
-   dias, 3 a 7, 8 a 30, não voltou), divididas em mesmo CID, outro CID e 
+4. **Depois da evasão:** barras por faixa de dias até o retorno 
+   (`faixa_retorno`: até 2 dias, 3 a 7, 8 a 30, mais de 30, não retornou), 
+   divididas em mesmo CID, outro CID e 
    CID não informado. Considera só evasões com 30 dias ou mais de dados 
    posteriores, pois uma evasão recente ainda não teve tempo de retornar. O 
    título do visual informa a regra.
@@ -250,6 +253,8 @@ não como segmentação. A página abre com todos os meses selecionados.
   de contar em `fl_retorno_48h` (total de 655 para 612 no período) e 
   aparece como `CID NÃO INFORMADO` em `comparacao_cid_proxima_visita`, pois 
   `-` igual a `-` não prova o mesmo motivo.
+- **`cod_cid` com CID `-`:** recebe `NÃO INFORMADO`, para aparecer nos 
+  visuais em vez de ficar oculto.
 - **Nomes longos:** sete valores encurtados no `final` do `atendimentos_pa`, 
   sem colunas duplicadas, para caber no eixo dos visuais (ver ficha técnica 
   de métricas). As páginas 1 a 3 passam a exibir os nomes novos.
@@ -267,12 +272,20 @@ não como segmentação. A página abre com todos os meses selecionados.
 `minutos_ate_proxima_visita` ✅, `comparacao_cid_proxima_visita` ✅, 
 `fl_conversao_proxima_visita` ✅ (todos em 2026-10-30). Os campos de 
 próxima visita usam função de janela por paciente, e o nulo indica a 
-última visita do paciente.
+última visita do paciente. Adicionados em 2026-11-04: `ordem_turno` ✅, 
+`faixa_hora_2h` ✅, `faixa_retorno` ✅, `ordem_faixa_retorno` ✅ e 
+`status_evasao` ✅ (testes do modelo executados: só as três falhas de 
+sequência temporal já conhecidas).
 
-**Pendências:** deploy da imagem do dbt com os campos novos (build, 
-atualização do job e execução); construção dos seis blocos no Power BI; 
-ordenação de `dia_semana` pela coluna `ordem_dia_semana`; medidas DAX de 
-contagem (`Total de Evasões PA`, `Total de Retornos 48h PA`) ✅ criadas.
+**Layout no Power BI:** página personalizada, em duas colunas de blocos, com 
+altura de 800 e ajustada conforme os blocos são construídos.
+
+**Pendências:** deploy da imagem do dbt com os campos novos (commit, build, 
+atualização do job e execução); no Power BI, ordenar `turno` por 
+`ordem_turno` e `faixa_retorno` por `ordem_faixa_retorno`, usar 
+`status_evasao` na legenda do bloco 2 e construir os blocos restantes 
+(Quando evade, Depois da evasão); medidas DAX de contagem (`Total de 
+Evasões PA`, `Total de Retornos 48h PA`) ✅ criadas.
 
 ### Página 5 — Conversão e Gravidade
 Análise aprofundada da conversão: perfil de quem converte por classificação 
@@ -415,7 +428,7 @@ Notificação automática quando algo estiver fora do esperado.
 - Validar Página 1 com dados históricos
 - ~~Construir Página 2 (Jornada do Paciente)~~ ✅ (sessão 20/08)
 - ~~Construir Página 3 (Perfil do Paciente)~~ ✅ (sessão 16/09)
-- Página 4 (Retornos e Evasões): ~~camada dbt~~ ✅ (30/10); deploy da imagem e construção no Power BI pendentes
+- Página 4 (Retornos e Evasões): ~~camada dbt~~ ✅ (04/11); deploy da imagem e conclusão da construção no Power BI pendentes
 - Construir Páginas 5 a 7 (conforme dados disponíveis na Fase 1)
 
 ### Fase 2 — Exames e prescrição

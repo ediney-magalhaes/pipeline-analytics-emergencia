@@ -197,7 +197,10 @@ base as (
        a.PRESTADOR,
        a.ESPECIALIDADE,
        a.CID,
-       split(a.CID, ' - ')[offset(0)] as cod_cid,
+       case
+        when a.CID = '-' then 'NÃO INFORMADO'
+        else split(a.CID, ' - ')[offset(0)]
+       end as cod_cid,
        case
         when a.MOTIVO_ALTA is null then 'NÃO INFORMADO'
         when a.MOTIVO_ALTA = '' then 'NÃO INFORMADO'
@@ -236,6 +239,13 @@ base as (
         when extract(hour from a.DT_HR_TOTEM_RECEP) between 18 and 23 then 'Noite'
         else 'Madrugada' end as turno,
        case
+        when a.DT_HR_TOTEM_RECEP is null then null
+        when extract(hour from a.DT_HR_TOTEM_RECEP) between 7 and 11 then 1
+        when extract(hour from a.DT_HR_TOTEM_RECEP) between 12 and 17 then 2
+        when extract(hour from a.DT_HR_TOTEM_RECEP) between 18 and 23 then 3
+        else 4
+       end as ordem_turno,
+       case
         when a.IDADE is null then null
         when a.IDADE between 0 and 2 then '0 a 2'
         when a.IDADE between 3 and 5 then '3 a 5'
@@ -249,6 +259,10 @@ base as (
         when a.IDADE between 50 and 59 then '50 a 59'
         else '60 ou mais' end as faixa_etaria,
        extract(hour from a.DT_HR_TOTEM_RECEP) as hora_chegada,
+       concat(
+        lpad(cast(div(extract(hour from a.DT_HR_TOTEM_RECEP), 2) * 2 as string), 2, '0'), '-',
+        lpad(cast(div(extract(hour from a.DT_HR_TOTEM_RECEP), 2) * 2 + 2 as string), 2, '0'), 'h'
+       ) as faixa_hora_2h,
        case 
         when a.DT_HR_TOTEM_RECEP is null then null
         when extract(dayofweek from a.DT_HR_TOTEM_RECEP) = 1 then 'Dom'
@@ -354,6 +368,29 @@ final as(
         end as comparacao_cid_proxima_visita,
         lead(fl_conversao) over(partition by CD_PACIENTE order by DT_HR_TOTEM_RECEP) as fl_conversao_proxima_visita
     from base
+),
+
+faixas as(
+    select *,
+    case
+     when minutos_ate_proxima_visita <= 2880 then 'ATÉ 2 DIAS'
+     when minutos_ate_proxima_visita <= 10080 then '3 A 7 DIAS'
+     when minutos_ate_proxima_visita <= 43200 then '8 A 30 DIAS'
+     when minutos_ate_proxima_visita is null then 'NÃO RETORNOU'
+     else '> 30 DIAS'
+    end as faixa_retorno,
+    case
+     when minutos_ate_proxima_visita <= 2880 then 1
+     when minutos_ate_proxima_visita <= 10080 then 2
+     when minutos_ate_proxima_visita <= 43200 then 3
+     when minutos_ate_proxima_visita is null then 5
+     else 4
+    end as ordem_faixa_retorno,
+    case
+     when fl_evasao = 1 then 'evadiu'
+     else 'não evadiu'
+    end as status_evasao
+    from final
 )
 
-select * from final
+select * from faixas

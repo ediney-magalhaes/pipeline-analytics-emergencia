@@ -2,7 +2,7 @@
 
 **Data:** 2026-05-29
 
-**Última atualização:** 2026-10-30
+**Última atualização:** 2026-11-04
 
 **Status:** Em construção — expande conforme novas páginas forem desenvolvidas
 
@@ -491,8 +491,8 @@ parâmetro.
 
 ## Indicadores — Página 4 (Retornos e Evasões)
 
-**Status:** camada dbt concluída em 2026-10-30; construção dos visuais no Power BI
-pendente. Todos os campos abaixo são calculados no modelo `atendimentos_pa`, por
+**Status:** camada dbt concluída em 2026-11-04 (cinco colunas finais adicionadas);
+construção dos visuais no Power BI em andamento. Todos os campos abaixo são calculados no modelo `atendimentos_pa`, por
 atendimento, sem tabela agregada dedicada.
 
 ### `hora_chegada`, `dia_semana` e `ordem_dia_semana`
@@ -504,6 +504,9 @@ Extraídos de `DT_HR_TOTEM_RECEP`, para os mapas de calor por horário.
 | `hora_chegada` | Hora do dia (0 a 23) da chegada ao totem |
 | `dia_semana` | Texto: `Dom`, `Seg`, `Ter`, `Qua`, `Qui`, `Sex`, `Sáb`. Nulo se `DT_HR_TOTEM_RECEP` for nulo |
 | `ordem_dia_semana` | Número de 1 (domingo) a 7 (sábado), exclusivamente para ordenar `dia_semana` no Power BI (Classificar por Coluna) |
+| `turno` | Manhã, Tarde, Noite ou Madrugada, conforme a hora de chegada |
+| `ordem_turno` | Número de 1 a 4, exclusivamente para ordenar `turno` no Power BI (Classificar por Coluna) |
+| `faixa_hora_2h` | Faixa de 2 horas da chegada, em texto (`00-02h`, `02-04h`, ..., `22-24h`), calculada como `div(hora_chegada, 2) * 2` e esse valor + 2, com `lpad` para manter a ordem alfabética igual à cronológica |
 
 **Validação:** `DT_HR_TOTEM_RECEP` não tem nulos nas 11 competências carregadas
 (nov/2025 a set/2026). Os 7 pares `dia_semana` × `ordem_dia_semana` e as 24 horas
@@ -529,6 +532,8 @@ paciente**: são 29.990 nulos, igual ao número de pacientes distintos.
 | `minutos_ate_proxima_visita` | Minutos entre a chegada deste atendimento e a chegada do próximo do mesmo paciente |
 | `comparacao_cid_proxima_visita` | Comparação do CID entre este atendimento e o próximo (ver valores abaixo) |
 | `fl_conversao_proxima_visita` | Valor de `fl_conversao` do próximo atendimento do mesmo paciente (1 = a visita seguinte terminou em internação) |
+| `faixa_retorno` | Faixa do tempo até a próxima visita (ver regra abaixo) |
+| `ordem_faixa_retorno` | Número para ordenar `faixa_retorno` no Power BI (Classificar por Coluna) |
 
 **Valores de `comparacao_cid_proxima_visita`:**
 
@@ -544,6 +549,21 @@ A ordem das condições é parte da regra: o teste do `-` vem antes da igualdade
 em `fl_retorno_48h`. Distribuição em 2026-10-30: `OUTRO CID` 16.124, `MESMO CID` 2.457,
 `CID NÃO INFORMADO` 1.511 e nulo 29.990 (total 50.082). A coluna usa o prefixo
 `comparacao_`, e não `fl_`, porque devolve texto, e não 0 ou 1.
+
+**Regra de `faixa_retorno`** (sobre `minutos_ate_proxima_visita`):
+
+| Faixa | Condição | `ordem_faixa_retorno` |
+|---|---|---|
+| `ATÉ 2 DIAS` | até 2.880 minutos | 1 |
+| `3 A 7 DIAS` | até 10.080 minutos | 2 |
+| `8 A 30 DIAS` | até 43.200 minutos | 3 |
+| `> 30 DIAS` | acima de 43.200 minutos | 4 |
+| `NÃO RETORNOU` | nulo (última visita do paciente nos dados) | 5 |
+
+O teste de nulo vem antes do `else`, senão a última visita cairia em `> 30 DIAS`. Nulo
+não é um tempo de retorno, e por isso a categoria é explícita. A faixa `ATÉ 2 DIAS`
+é uma janela em minutos, e não coincide com `fl_retorno_48h`, que usa 2 dias de
+calendário e exclui o CID `-`.
 
 **Observações sobre os dados:**
 - 16 atendimentos têm `minutos_ate_proxima_visita = 0`. Quinze deles formam 15 pares
@@ -563,8 +583,11 @@ de dados posteriores, e o título do visual informa isso.
 ### `cod_cid`
 
 Código do CID, sem a descrição (`split(CID, ' - ')[0]`). É o rótulo do eixo nos
-visuais, e a coluna `CID` original continua inteira para o tooltip. Validada:
-1.831 valores distintos, iguais aos de `CID`, sem nulos, no máximo 4 caracteres. O
+visuais, e a coluna `CID` original continua inteira para o tooltip. Quando o CID é
+`-` (não informado), `cod_cid` recebe `NÃO INFORMADO`, para que esses atendimentos
+apareçam nos visuais em vez de ficarem ocultos. Validada na criação:
+1.831 valores distintos, iguais aos de `CID`, sem nulos, no máximo 4 caracteres
+(sem contar o rótulo `NÃO INFORMADO`). O
 texto completo do CID chega a 189 caracteres, e por isso não serve como rótulo
 de eixo.
 
@@ -595,8 +618,23 @@ não foi alterado.
 Entre os 3.000 atendimentos com `fl_evasao = 1`, 99,9% têm Início Médico, Fim Médico
 e Alta preenchidos, e 97,4% têm as etapas de classificação e cadastro. A evasão,
 neste registro, não é sair antes de ser visto, e por isso a última etapa registrada
-não distingue os casos. O bloco "Onde o evadido espera mais" compara os tempos por
-etapa (P50, com P90 no tooltip) entre evadidos e demais pacientes.
+não distingue os casos. O bloco "Onde o evadido passa mais tempo" compara os tempos
+por etapa (P50, com P90 no tooltip) entre evadidos e demais pacientes. A permanência
+total não entra nesse gráfico, porque é o fim da jornada e não uma etapa.
+
+### `status_evasao`
+
+Texto derivado de `fl_evasao`: `evadiu` (1) ou `não evadiu` (0). Existe para a legenda
+dos visuais mostrar texto em vez de 0 e 1. Usa o prefixo `status_`, e não `fl_`, porque
+devolve texto. A coluna `fl_evasao` continua sendo a base dos cálculos e dos testes.
+
+### Testes e deploy da Página 4
+
+Em 2026-11-04, `dbt test --select atendimentos_pa` retornou 20 aprovados e 3
+reprovados (23 no total). As três reprovações são os testes de sequência temporal já
+conhecidos, que acusam registros reais fora de ordem na origem (40, 237 e 12 casos), e
+não vêm das colunas novas. O `accepted_values` do `dia_semana`, do `turno` e o teste de
+unicidade (`atend_PA`, `competencia`) passam.
 
 ---
 
@@ -610,3 +648,4 @@ etapa (P50, com P90 no tooltip) entre evadidos e demais pacientes.
 | 2026-09-16 | Página 3 finalizada: pirâmide etária, CIDs mais frequentes e cruzamento perfil × desfecho via Parâmetros de Campo. `SEXO` e `grupo_cid` com nulos tratados como categoria explícita. |
 | 2026-10-15 | `atendimentos_pa` passa a ter uma linha por atendimento: o join com `curadoria_conversao` deduplica por atendimento, mantendo a decisão mais recente |
 | 2026-10-30 | `fl_retorno_48h` deixa de contar CID `-` (total do período de 655 para 612). Definição da flag corrigida: ela marca o atendimento que gerou o retorno, e a janela é de 2 dias de calendário. Página 4: campos de horário, de próxima visita e `cod_cid`; padronização de nomes; `MOTIVO_ALTA` nulo vira `NÃO INFORMADO` |
+| 2026-11-04 | Página 4: `cod_cid` passa a mostrar `NÃO INFORMADO` quando o CID é `-`; novas colunas `ordem_turno`, `faixa_hora_2h`, `faixa_retorno`, `ordem_faixa_retorno` e `status_evasao`; bloco renomeado para "Onde o evadido passa mais tempo", sem a permanência total |
