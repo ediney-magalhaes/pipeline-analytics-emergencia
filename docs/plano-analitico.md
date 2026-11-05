@@ -1,7 +1,7 @@
 # Plano Analítico — Emergência
 
 **Data:** 2026-05-21  
-**Última atualização:** 2026-11-04  
+**Última atualização:** 2026-11-05  
 **Status:** Em construção
 
 ## Objetivo
@@ -205,17 +205,25 @@ aparecem em cada bloco como taxa, com a contagem no tooltip).
    dos 3.000 evadidos têm Início Médico e Alta preenchidos: a última etapa 
    registrada não distingue os casos.
 3. **Quando evade:** mapa de calor por faixa de 2 horas (`faixa_hora_2h`) × 
-   dia da semana, com a taxa na cor e a contagem no tooltip. Faixas de 2 horas (84 
+   dia da semana, com a taxa na cor e a contagem no tooltip (página 
+   `Tooltip Evasão`: "N evasões de N atendimentos"). Faixas de 2 horas (84 
    células), e não hora × dia (168 células): com um mês filtrado, hora × 
    dia daria cerca de 1,6 evasões por célula, o que é ruído.
 
 **Linha 2 — Retornos**
-4. **Depois da evasão:** barras por faixa de dias até o retorno 
-   (`faixa_retorno`: até 2 dias, 3 a 7, 8 a 30, mais de 30, não retornou), 
-   divididas em mesmo CID, outro CID e 
-   CID não informado. Considera só evasões com 30 dias ou mais de dados 
-   posteriores, pois uma evasão recente ainda não teve tempo de retornar. O 
-   título do visual informa a regra.
+4. **Evadidos que voltaram: em quanto tempo e com qual CID?** Barras 
+   empilhadas, em contagem de evadidos (`Total de Evasões PA`), por faixa de 
+   dias até o retorno (`faixa_retorno`: até 2 dias, 3 a 7, 8 a 30, mais de 
+   30), divididas em mesmo CID, outro CID e CID não informado. Decisão de 
+   2026-11-04: o visual filtra a categoria `NÃO RETORNOU` (cerca de 1.900 
+   dos 3.000 evadidos), porque ela dominava o eixo e achatava as demais 
+   barras (150 a 430 evadidos por faixa). A categoria continua no dbt. Com 
+   o filtro, o visual responde apenas "entre os que voltaram, quando e com 
+   qual CID", e o título informa isso. A regra de considerar só evasões com 
+   30 dias ou mais de dados posteriores foi abandonada, pois só corrigia o 
+   excesso de `NÃO RETORNOU`. Leitura: em todas as faixas, `OUTRO CID` é a 
+   maior parte, mas o CID pode mudar com o diagnóstico ao longo das 
+   visitas, então outro CID não prova outro problema de saúde.
 5. **Retorno 48h e internação:** barras 100% empilhadas (internou ou não 
    na 2ª visita), para pacientes que retornaram em 48h sem internação na 
    1ª visita. Seletor de dimensão da 1ª visita: classificação de risco, 
@@ -224,7 +232,8 @@ aparecem em cada bloco como taxa, com a contagem no tooltip).
    retornos por mês espalhados por mais de 500 CIDs, e uma proporção com 
    1 ou 2 pacientes não significa nada.
 6. **Quando retorna em 48h:** mapa de calor por turno × dia da semana, 
-   com a taxa na cor e a contagem no tooltip. Turno, e não hora, porque o 
+   com a taxa na cor e a contagem no tooltip (página `Tooltip Retorno`: "N 
+   retornos de N atendimentos"). Turno, e não hora, porque o 
    retorno em 48h é raro demais para a grade completa.
 
 **Filtros:** competência, especialidade, convênio e grupo CID. A 
@@ -235,7 +244,9 @@ não como segmentação. A página abre com todos os meses selecionados.
 - Quem evade esperou mais que os demais, e em qual etapa?
 - Pacientes graves estão evadindo? Estão retornando?
 - Que especialidade e que CID prevalecem entre os evadidos?
-- Quem evadiu retornou? Em quanto tempo? Pelo mesmo motivo?
+- Quem evadiu e retornou voltou em quanto tempo? Pelo mesmo CID? (Quantos 
+  não voltaram não aparece no bloco 4; a diferença entre o total de 
+  evadidos e a soma das barras dá esse número.)
 - Em quais horários e dias da semana a evasão e o retorno são mais frequentes?
 - Entre quem retornou em 48h sem ser internado, quantos foram internados 
   na 2ª visita, e com que perfil?
@@ -278,14 +289,21 @@ próxima visita usam função de janela por paciente, e o nulo indica a
 sequência temporal já conhecidas).
 
 **Layout no Power BI:** página personalizada, em duas colunas de blocos, com 
-altura de 800 e ajustada conforme os blocos são construídos.
+altura aumentada para caber o mapa de calor de 12 faixas (1000 no ajuste 
+inicial).
 
-**Pendências:** deploy da imagem do dbt com os campos novos (commit, build, 
-atualização do job e execução); no Power BI, ordenar `turno` por 
-`ordem_turno` e `faixa_retorno` por `ordem_faixa_retorno`, usar 
-`status_evasao` na legenda do bloco 2 e construir os blocos restantes 
-(Quando evade, Depois da evasão); medidas DAX de contagem (`Total de 
-Evasões PA`, `Total de Retornos 48h PA`) ✅ criadas.
+**Status (2026-11-04):** camada dbt, imagem `v46` em produção e os seis 
+blocos no Power BI concluídos e validados com o filtro de competência. 
+`turno` ordenado por `ordem_turno` e `faixa_retorno` por 
+`ordem_faixa_retorno`; legenda do bloco 2 usa `status_evasao`; páginas de 
+tooltip `Tooltip Retorno` e `Tooltip Evasão`; medidas DAX `Total de Evasões 
+PA`, `Total de Retornos 48h PA`, `Texto Retornos de Atendimentos` e `Texto 
+Evasões PA` ✅ criadas.
+
+**Pendências:**
+- Filtro de Grupo CID mostra `circulatório` duas vezes: causa a investigar 
+  no dbt (espaço, maiúscula ou acento), a corrigir antes da Página 5.
+- Recontagem do MESMO CID (231 de diferença na conferência de 2026-10-30).
 
 ### Página 5 — Conversão e Gravidade
 Análise aprofundada da conversão: perfil de quem converte por classificação 
@@ -428,7 +446,7 @@ Notificação automática quando algo estiver fora do esperado.
 - Validar Página 1 com dados históricos
 - ~~Construir Página 2 (Jornada do Paciente)~~ ✅ (sessão 20/08)
 - ~~Construir Página 3 (Perfil do Paciente)~~ ✅ (sessão 16/09)
-- Página 4 (Retornos e Evasões): ~~camada dbt~~ ✅ (04/11); deploy da imagem e conclusão da construção no Power BI pendentes
+- ~~Construir Página 4 (Retornos e Evasões)~~ ✅ (sessão 04/11: dbt, imagem `v46` e seis blocos no Power BI)
 - Construir Páginas 5 a 7 (conforme dados disponíveis na Fase 1)
 
 ### Fase 2 — Exames e prescrição
