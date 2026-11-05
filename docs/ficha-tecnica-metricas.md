@@ -2,7 +2,7 @@
 
 **Data:** 2026-05-29
 
-**Última atualização:** 2026-11-04
+**Última atualização:** 2026-11-05
 
 **Status:** Em construção — expande conforme novas páginas forem desenvolvidas
 
@@ -491,9 +491,9 @@ parâmetro.
 
 ## Indicadores — Página 4 (Retornos e Evasões)
 
-**Status:** camada dbt concluída em 2026-11-04 (cinco colunas finais adicionadas);
-construção dos visuais no Power BI em andamento. Todos os campos abaixo são calculados no modelo `atendimentos_pa`, por
-atendimento, sem tabela agregada dedicada.
+**Status:** concluída em 2026-11-04: camada dbt (imagem `v46` em produção) e os seis
+blocos no Power BI. Todos os campos abaixo são calculados no modelo `atendimentos_pa`,
+por atendimento, sem tabela agregada dedicada.
 
 ### `hora_chegada`, `dia_semana` e `ordem_dia_semana`
 
@@ -577,8 +577,17 @@ calendário e exclui o CID `-`.
   não concentram o indicador.
 
 **Limitação de acompanhamento:** uma evasão recente ainda não teve tempo de
-retornar. O bloco "Depois da evasão" deve considerar só evasões com 30 dias ou mais
-de dados posteriores, e o título do visual informa isso.
+retornar, e isso infla a categoria `NÃO RETORNOU`. Em 2026-11-04 decidiu-se que o
+visual "Evadidos que voltaram: em quanto tempo e com qual CID?" filtra a categoria
+`NÃO RETORNOU` (cerca de 1.900 dos 3.000 evadidos) e mostra só quem voltou, em
+contagem de evadidos. A categoria continua no dbt, e a regra de considerar só evasões
+com 30 dias ou mais de dados posteriores foi abandonada, porque só corrigia o excesso
+de `NÃO RETORNOU`. Por isso o visual não informa quantos evadidos não voltaram: esse
+número é o total de evadidos menos a soma das barras.
+
+**Leitura do CID na próxima visita:** em todas as faixas, `OUTRO CID` é a maior parte
+das visitas seguintes. O CID pode mudar com o diagnóstico ao longo das visitas, então
+outro CID não prova outro problema de saúde.
 
 ### `cod_cid`
 
@@ -649,3 +658,4 @@ unicidade (`atend_PA`, `competencia`) passam.
 | 2026-10-15 | `atendimentos_pa` passa a ter uma linha por atendimento: o join com `curadoria_conversao` deduplica por atendimento, mantendo a decisão mais recente |
 | 2026-10-30 | `fl_retorno_48h` deixa de contar CID `-` (total do período de 655 para 612). Definição da flag corrigida: ela marca o atendimento que gerou o retorno, e a janela é de 2 dias de calendário. Página 4: campos de horário, de próxima visita e `cod_cid`; padronização de nomes; `MOTIVO_ALTA` nulo vira `NÃO INFORMADO` |
 | 2026-11-04 | Página 4: `cod_cid` passa a mostrar `NÃO INFORMADO` quando o CID é `-`; novas colunas `ordem_turno`, `faixa_hora_2h`, `faixa_retorno`, `ordem_faixa_retorno` e `status_evasao`; bloco renomeado para "Onde o evadido passa mais tempo", sem a permanência total |
+| 2026-11-05 | Página 4 concluída no Power BI. O visual de retorno após evasão filtra `NÃO RETORNOU` e a regra dos 30 dias de seguimento foi abandonada. Pendências registradas: grupo CID duplicado (`circulatório`) e recontagem do MESMO CID |
